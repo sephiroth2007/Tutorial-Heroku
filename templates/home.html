@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Load Moment function -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.js"></script>
+
+
+
+<!-- Initialize a select button -->
+<select id="selectButton"></select>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<!-- Color Scale -->
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 100, right: 100, bottom: 100, left: 300},
+    width = 860 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+
+
+
+var origDate = '2009-09-13'
+
+mDate = moment(origDate);
+
+console.log(mDate.format("DD/MM/YYYY"));
+
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// append the svg2 object to the body of the page
+var svg2 = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+
+//Read the data
+d3.csv("https://raw.githubusercontent.com/sephiroth2007/data/main/covid19_rt_global.csv",
+
+function(d){
+  return { date : d3.timeParse("%Y-%m-%d")(d.date), True_I_Inc : d.True_I_Inc,
+       I50_Inc: d.I50_Inc , I25_Inc: d.I25_Inc, I75_Inc: d.I75_Inc ,
+       R050: d.R050, R075: d.R075, R025: d.R025,
+       time: d.time,
+       countryname:d.countryname
+       }
+},
+
+function(data) {
+
+// List of groups (here I have one country per column)
+    var allGroup = d3.map(data, function(d){return(d.countryname)}).keys()
+
+    console.log(allGroup);
+
+
+//    console.log(data[0].date);
+//    console.log(parseDate(data[0].date));
+    // https://momentjs.com/docs/#/displaying/
+  //  console.log(moment(data[0].date).format("MMM DD"));
+  //  console.log(data[0].date);
+
+    // List of groups (here I have one group per column)
+    //var allGroup = ["valueA", "valueB", "valueC"]
+
+    // add the options to the button
+    d3.select("#selectButton")
+      .selectAll('myOptions')
+       .data(allGroup)    //muestra pais vectores
+      .enter()
+       .append('option')
+      .text(function (d) { return d; }) // text showed in the menu
+      .attr("value", function (d) { return d; }) // corresponding value returned by the button
+
+    // A color scale: one color for each group
+    var myColor = d3.scaleOrdinal()
+      .domain(allGroup)
+      .range(d3.schemeSet2);
+
+datafilter=data.filter(function(d){return d.countryname==allGroup[0]})
+
+//  var extent_X = [0, d3.max(datafilter, function(d) {
+//     return Math.max(d.date); })]
+// define the x scale (horizontal)
+  //var mindate = new Date(2020,0,1),
+//  var maxdate = 'Dec 10'
+//  console.log(mindate)
+//  console.log(maxdate)
+
+  //var extent_X = d3.max(d3.extent(data, function(d) { return d.date; }))
+  // When reading the csv, I must format variables:
+
+
+
+  var extent_Y = [0, d3.max(datafilter, function(d) {
+     return Math.max(d.True_I_Inc); })]
+
+
+
+
+
+//  console.log(d3.max(extent_X))
+//  console.log(d3.max(extent_X))
+//  console.log(d3.max(extent_X))
+//  extent_X=['2020-02-01','2020-11-01']
+//  console.log(data)
+
+//  console.log(extent_Y)
+    // format the data
+//   data.forEach(function(d) {
+//       data.date = moment(d.date).format("YYYY-MM-DD");
+      // data.date = moment(d.date).format("MMM DD");
+//   });
+//   console.log(data)
+//   console.log(data)
+//   console.log(data)
+//   console.log(data)
+//   console.log(data)
+     console.log(d3.max(d3.extent(data, function(d) { return d.date; })))
+     console.log(d3.max(d3.extent(data, function(d) { return d.date; })))
+     console.log(d3.max(d3.extent(data, function(d) { return d.date; })))
+     console.log(d3.max(d3.extent(data, function(d) { return d.date; })))
+
+    // Add X axis --> it is a date format
+//    var x = d3.scaleLinear()
+    var x = d3.scaleTime()
+    //  .domain([0,10])
+    //  .domain(extent_X)
+    //  .domain([new Date("2020-01-01"), new Date("2020-12-01")])
+      .domain(d3.extent(data, function(d) { return d.date; }))
+//      .range([new Date("2020-01-01"), new Date("2020-12-01")])
+      .range([ 0, width ]);
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+    // Add Y axis
+    var y = d3.scaleLinear()
+     // .domain( [0,200])
+      .domain(extent_Y)
+      .range([ height, 0 ]);
+    svg.append("g")
+      .call(d3.axisLeft(y));
+
+
+    // Initialize line with group
+    var line = svg
+      .append('g')
+      .append("path")
+        .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+        .attr("d", d3.line()
+          .x(function(d) { return x(d.date) })
+          .y(function(d) { return y(d.True_I_Inc) })
+        )
+        .attr("stroke","steelblue",function(d){ return myColor("valueA") })
+        .style("stroke-width", "1px")
+      //  .style("stroke-width", 4)
+        .style("fill", "none")
+
+
+     // Initialize line2 with group
+    var line2 = svg
+      .append('g')
+      .append("path")
+        .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+        .attr("d", d3.line()
+          .x(function(d) { return x(d.date) })
+          .y(function(d) { return y(d.I50_Inc) })
+        )
+        .attr("stroke","grey",function(d){ return myColor("valueA") })
+       // .style("stroke-width", 4)
+        .style("stroke-width", "1px")
+        .style("fill", "none")
+        .style("stroke-dasharray", ("3, 3"))
+        .style("opacity", 1)
+
+       // Show confidence interval
+    var line3 = svg
+      .append('g')
+      .append("path")
+        .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+        .attr("fill", "#cce5df")
+        .attr("stroke", "none")
+        .attr("d", d3.area()
+          .x(function(d) { return x(d.date) })
+          .y0(function(d) { return y(d.I75_Inc)})
+          .y1(function(d) { return y(d.I25_Inc)})
+        )
+        .style("opacity", .5)
+
+
+
+/////// GRAPH 2
+
+
+datafilter= data.filter(function(d){return d.countryname==allGroup[0]})
+
+//var extent_X2 = [0, d3.max(datafilter, function(d) {
+//     return Math.max(d.time); })]
+
+
+  var extent_Y2 = [0, d3.max(datafilter, function(d) {
+     return Math.max(d.R050); })]
+
+        console.log(data)
+        console.log(extent_Y2)
+
+     // Add X axis --> it is a date format
+    var x2 = d3.scaleTime()
+    //  .domain([0,10])
+  //    .domain(extent_X2)
+    //  .domain(d3.extent(data, function(d) { return d.date; }))
+      .domain(d3.extent(data, function(d) { return d.date; }))
+      .range([ 0, width ]);
+    svg2.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x2));
+
+
+
+// Add Y axis
+    var y2 = d3.scaleLinear()
+     // .domain( [0,200])
+      .domain(extent_Y2)
+      .range([ height, 0 ]);
+    svg2.append("g")
+      .call(d3.axisLeft(y2));
+
+    // Add X axis --> it is a date format
+    var x2 = d3.scaleTime()
+    //  .domain([0,10])
+    //  .domain(extent_X2)
+      .domain(d3.extent(data, function(d) { return d.date; }))
+      .range([ 0, width ]);
+    svg2.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x2));
+
+
+
+    // Initialize line5 with group
+    var line5 = svg2
+      .append('g')
+      .append("path")
+        .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+        .attr("d", d3.line()
+          .x(function(d) { return x2(d.date) })
+          .y(function(d) { return y2(d.R050) })
+        )
+        .attr("stroke","black",function(d){ return myColor("valueA") })
+        .style("stroke-width", "1px")
+      //  .style("stroke-width", 4)
+        .style("fill", "none")
+
+     // Initialize line6 with group
+  //  var line6 = svg2
+//      .append('g')
+//      .append("path")
+//        .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+//        .attr("d", d3.line()
+//          .x(function(d) { return x2(d.date) })
+//          .y(function(d) { return y2(d.R075) })
+//        )
+//        .attr("stroke","grey",function(d){ return myColor("valueA") })
+     //   .style("stroke-width", 4)
+//        .style("stroke-width", "1px")
+//        .style("fill", "none")
+//        .style("stroke-dasharray", ("3, 3"))
+//        .style("opacity", .5)
+
+   // Initialize line7 with group
+  //  var line7 = svg2
+//      .append('g')
+  //    .append("path")
+//        .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+  //      .attr("d", d3.line()
+  //        .x(function(d) { return x2(d.date) })
+  //        .y(function(d) { return y2(d.R025) })
+  //      )
+  //      .attr("stroke","grey",function(d){ return myColor("valueA") })
+     //   .style("stroke-width", 4)
+//        .style("stroke-width", "1px")
+  //      .style("fill", "none")
+  //      .style("stroke-dasharray", ("3, 3"))
+  //      .style("opacity", .5)
+
+
+        // Show confidence interval
+//     var line6 = svg2
+//       .append('g')
+//       .append("path")
+//         .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+//         .attr("fill", "#cce5df")
+//         .attr("stroke", "none")
+//         .attr("d", d3.area()
+//           .x(function(d) { return x(d.date) })
+//           .y0(function(d) { return y(d.R075)})
+//           .y1(function(d) { return y(d.R025)})
+//         )
+
+
+         // Show confidence interval
+      var line6 = svg2
+        .append('g')
+        .append("path")
+          .datum(data.filter(function(d){return d.countryname==allGroup[0]}))
+          .attr("fill", "#cce5df")
+          .attr("stroke", "none")
+          .attr("d", d3.area()
+            .x(function(d) { return x2(d.date) })
+            .y0(function(d) { return y2(d.R075)})
+            .y1(function(d) { return y2(d.R025)})
+          )
+         .style("opacity", .5)
+
+      console.log(data)
+
+
+
+   svg.append("text")      // text label for the x axis
+        .attr("x", width / 2 )
+                .attr("y",  height + margin.bottom-50)
+                .style("text-anchor", "middle")
+                .text("date");
+
+
+       svg.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -70)
+        .attr("x",-50)
+        .attr("transform", "rotate(-90)")
+        .text("True and Estimated Daily Incidence");
+
+
+      svg2.append("text")      // text label for the x axis
+        .attr("x", width / 2 )
+                .attr("y",  height + margin.bottom-50)
+                .style("text-anchor", "middle")
+                .text("date");
+
+
+       svg2.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -70)
+        .attr("x",-60)
+        .attr("transform", "rotate(-90)")
+        .text("Estimated Daily Reproduction");
+
+       svg2.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -50)
+        .attr("x",-160)
+        .attr("transform", "rotate(-90)")
+        .text("Rt");
+
+
+//////// LABELS
+
+ svg.append("text")
+      .attr("y",  height + margin.bottom-30)
+      .attr("x",0)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+      .style("fill", "steelblue")
+      .text("True I: reported daily incidence");
+
+ svg.append("text")
+      .attr("y",  height + margin.bottom-10)
+      .attr("x",35)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+       .style("fill", "grey")
+      .style("opacity", 1)
+      .text("I50: Median estimation of daily incidence");
+
+svg.append("text")
+      .attr("y",  height + margin.bottom-30)
+      .style("text-anchor", "middle")
+      .attr("x",350)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+         .style("fill", "grey")
+      .style("opacity", .5)
+      .text("I75, I25: 50% quantile band");
+
+svg2.append("text")
+      .attr("y",  height + margin.bottom-30)
+      .attr("x",0)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+      .style("fill", "black")
+      .text("R50: Median estimated daily reproduction number");
+
+ svg2.append("text")
+      .attr("y",  height + margin.bottom-10)
+      .attr("x",-60)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+       .style("fill", "grey")
+      .style("opacity", .5)
+      .text("R75, R25: 50% estimation band");
+
+      today=d3.max(d3.extent(data, function(d) { return d.date; }))
+      svg.append("line")
+      .attr("x1", x(today))  //<<== change your code here
+      .attr("y1", 0)
+      .attr("x2", x(today))  //<<== and here
+      .attr("y2", height )
+  //    .attr("y2", height - margin.top - margin.bottom)
+      .style("stroke-width", 2)
+      .style("stroke", "black")
+      .style("fill", "none");
+
+      // HORIZONTAL LINE
+      value1=1.0
+      svg2.append("line")
+      .attr("x1", width)  //<<== change your code here
+      .attr("y1", y2(value1))
+      .attr("x2", 0)  //<<== and here
+      .attr("y2", y2(value1))
+  //    .attr("y2", height - margin.top - margin.bottom)
+      .style("stroke-width", 1)
+      .style("stroke", "black")
+      .attr("stroke-dasharray", "4")
+    //  .style("fill", "none");
+
+
+
+
+      console.log(extent_Y2)
+      console.log(extent_Y2)
+      console.log(extent_Y2)
+      console.log(extent_Y2)
+      console.log(extent_Y2)
+
+
+
+
+/////// UPDATE CHART
+
+    // A function that update the chart
+    function update(selectedGroup) {
+
+        d3.selectAll("g > *").remove()
+
+
+      // Create new data with the selection?
+      var dataFilter = data.filter(function(d){return d.countryname==selectedGroup})
+
+        var extent_Y = [0, d3.max(dataFilter, function(d) {
+     return Math.max(d.True_I_Inc); })]
+            y.domain(extent_Y)
+         console.log(extent_Y)
+
+
+//    var extent_X = [0, d3.max(dataFilter, function(d) {
+//     return Math.max(d.time); })]
+//     x.domain(extent_X)
+
+         /////PARA LOS DOMINIOS PARA QUE CAMBIE
+
+        var extent_Y2 = [0, d3.max(dataFilter, function(d) {
+     return Math.max(d.R050); })]
+            y2.domain(extent_Y2)
+         console.log(extent_Y2)
+
+
+//    var extent_X2 = [0, d3.max(dataFilter, function(d) {
+//     return Math.max(d.time); })]
+//     x2.domain(extent_X2)
+
+
+  // Give these new data to update line
+      var line = svg
+           .append('g')
+        .append("path")
+          .datum(dataFilter)
+          .attr("d", d3.line()
+            .x(function(d) { return x(d.date) })
+            .y(function(d) { return y(d.True_I_Inc) })
+          )
+        .attr("stroke","steelblue",function(d){ return myColor("valueA") })
+        .style("stroke-width", "1px")
+      //  .style("stroke-width", 4)
+        .style("fill", "none")
+
+      // Give these new data to update line
+      var line2 = svg
+        .append('g')
+        .append("path")
+          .datum(dataFilter)
+          .attr("d", d3.line()
+            .x(function(d) { return x(d.date) })
+            .y(function(d) { return y(d.I50_Inc) })
+          )
+        .attr("stroke","grey",function(d){ return myColor("valueA") })
+       // .style("stroke-width", 4)
+        .style("stroke-width", "1px")
+        .style("fill", "none")
+        .style("stroke-dasharray", ("3, 3"))
+        .style("opacity", 1)
+
+
+        // Show confidence interval
+       var line3 = svg
+         .append('g')
+         .append("path")
+           .datum(dataFilter)
+           .attr("fill", "#cce5df")
+           .attr("stroke", "none")
+           .attr("d", d3.area()
+             .x(function(d) { return x(d.date) })
+             .y0(function(d) { return y(d.I75_Inc)})
+             .y1(function(d) { return y(d.I25_Inc)})
+           )
+           .style("opacity", .5)
+
+
+                 // Add the X Axis
+           svg.append("g")
+               .attr("transform", "translate(0," + height + ")")
+               .call(d3.axisBottom(x));
+
+          // Add the Y Axis
+          svg.append("g")
+              .call(d3.axisLeft(y));
+
+
+          // Give these new data to update line
+      line5= svg2
+      .append('g')
+        .append("path")
+          .datum(dataFilter)
+           .attr("d", d3.line()
+            .x(function(d) { return x2(d.date) })
+            .y(function(d) { return y2(d.R050) })
+          )
+        .attr("stroke","black",function(d){ return myColor("valueA") })
+        .style("stroke-width", "1px")
+      //  .style("stroke-width", 4)
+        .style("fill", "none")
+
+  // //    Give these new data to update line
+  //    line7= svg2
+  //    .append('g')
+  //      .append("path")
+  //        .datum(dataFilter)
+  //         .attr("d", d3.line()
+  //          .x(function(d) { return x2(d.date) })
+  //          .y(function(d) { return y2(d.R075) })
+  //        )
+  //      .attr("stroke","grey",function(d){ return myColor("valueA") })
+  //   //   .style("stroke-width", 4)
+  //      .style("stroke-width", "1px")
+  //      .style("fill", "none")
+  //      .style("stroke-dasharray", ("3, 3"))
+  //      .style("opacity", 1)
+
+        // Show confidence interval
+     var line6 = svg2
+       .append('g')
+       .append("path")
+         .datum(dataFilter)
+         .attr("fill", "#cce5df")
+         .attr("stroke", "none")
+         .attr("d", d3.area()
+           .x(function(d) { return x2(d.date) })
+           .y0(function(d) { return y2(d.R075)})
+           .y1(function(d) { return y2(d.R025)})
+         )
+         .style("opacity", .5)
+
+
+
+              // Give these new data to update line
+//      line7= svg2
+//      .append('g')
+//        .append("path")
+//          .datum(dataFilter)
+//           .attr("d", d3.line()
+//            .x(function(d) { return x2(d.date) })
+//            .y(function(d) { return y2(d.R025) })
+//          )
+//        .attr("stroke","grey",function(d){ return myColor("valueA") })
+     //   .style("stroke-width", 4)
+//        .style("stroke-width", "1px")
+//        .style("fill", "none")
+//        .style("stroke-dasharray", ("3, 3"))
+//        .style("opacity", .5)
+
+
+                // Add the X Axis
+           svg2.append("g")
+               .attr("transform", "translate(0," + height + ")")
+               .call(d3.axisBottom(x2));
+
+          // Add the Y Axis
+          svg2.append("g")
+              .call(d3.axisLeft(y2));
+
+     svg.append("text")      // text label for the x axis
+        .attr("x", width / 2 )
+                .attr("y",  height + margin.bottom-50)
+                .style("text-anchor", "middle")
+                .text("date");
+
+
+       svg.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -70)
+        .attr("x",-50)
+        .attr("transform", "rotate(-90)")
+        .text("True and Estimated Daily Incidence");
+
+      svg2.append("text")      // text label for the x axis
+        .attr("x", width / 2 )
+                .attr("y",  height + margin.bottom-50)
+                .style("text-anchor", "middle")
+                .text("date");
+
+
+      svg2.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -70)
+        .attr("x",-60)
+        .attr("transform", "rotate(-90)")
+        .text("Estimated Daily Reproduction");
+
+       svg2.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -50)
+        .attr("x",-160)
+        .attr("transform", "rotate(-90)")
+        .text("Rt");
+
+//////// LABELS
+
+ svg.append("text")
+      .attr("y",  height + margin.bottom-30)
+      .attr("x",0)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+      .style("fill", "steelblue")
+      .text("True I: reported daily incidence");
+
+ svg.append("text")
+      .attr("y",  height + margin.bottom-10)
+      .attr("x",35)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+       .style("fill", "grey")
+      .style("opacity", 1)
+      .text("I50: Median estimation of daily incidence");
+
+svg.append("text")
+      .attr("y",  height + margin.bottom-30)
+      .style("text-anchor", "middle")
+      .attr("x",350)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+         .style("fill", "grey")
+      .style("opacity", .5)
+      .text("I75, I25: 50% quantile band");
+
+svg2.append("text")
+      .attr("y",  height + margin.bottom-30)
+      .attr("x",0)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+      .style("fill", "black")
+      .text("R50: Median estimated daily reproduction number");
+
+ svg2.append("text")
+      .attr("y",  height + margin.bottom-10)
+      .attr("x",-60)
+      .style("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+       .style("fill", "grey")
+      .style("opacity", .5)
+      .text("R75, R25: 50% estimation band");
+
+      // HORIZONTAL LINE
+      value1=1.0
+      svg2.append("line")
+      .attr("x1", width)  //<<== change your code here
+      .attr("y1", y2(value1))
+      .attr("x2", 0)  //<<== and here
+      .attr("y2", y2(value1))
+      //    .attr("y2", height - margin.top - margin.bottom)
+      .style("stroke-width", 1)
+      .style("stroke", "black")
+      .attr("stroke-dasharray", "4")
+      //  .style("fill", "none");
+
+
+
+    }
+
+    // When the button is changed, run the updateChart function
+    d3.select("#selectButton").on("change", function(d) {
+        // recover the option that has been chosen
+        var selectedOption = d3.select(this).property("value")
+        // run the updateChart function with this selected option
+        update(selectedOption)
+    })
+
+})
+
+
+</script>
