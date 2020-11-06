@@ -439,16 +439,18 @@ svg2.append("text")
       .style("opacity", 1)
       .text("R75, R25: 50% estimation band");
 
-      today=d3.max(d3.extent(data, function(d) { return d.date; }))
-      svg.append("line")
-      .attr("x1", x(today))  //<<== change your code here
-      .attr("y1", 0)
-      .attr("x2", x(today))  //<<== and here
-      .attr("y2", height )
-  //    .attr("y2", height - margin.top - margin.bottom)
-      .style("stroke-width", 2)
-      .style("stroke", "black")
-      .style("fill", "none");
+    // VERTICAL LINE ** I COMMENT WAITING THE NEW GUIDELINES
+
+  //     today=d3.max(d3.extent(data, function(d) { return d.date; }))
+  //     svg.append("line")
+  //     .attr("x1", x(today))  //<<== change your code here
+  //     .attr("y1", 0)
+  //     .attr("x2", x(today))  //<<== and here
+  //     .attr("y2", height )
+  // //    .attr("y2", height - margin.top - margin.bottom)
+  //     .style("stroke-width", 2)
+  //     .style("stroke", "black")
+  //     .style("fill", "none");
 
       // HORIZONTAL LINE
       value1=1.0
